@@ -3,12 +3,16 @@ package com.analyzer.view.components;
 
 import com.analyzer.model.*;
 import com.analyzer.controller.AnalysisController;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+// Agregar estos imports en ResultsTabPane.java
+import javafx.beans.property.SimpleStringProperty;
+import javafx.scene.control.cell.PropertyValueFactory;
 import java.util.List;
 import java.util.Map;
 
@@ -81,7 +85,7 @@ public class ResultsTabPane extends TabPane {
         getTabs().addAll(languageTab, tokensTab, errorsTab, symbolsTab, outputTab);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "unchecked"})
     private void setupTables() {
         // Tabla de Tokens
         TableColumn<Token, String> tokenValueCol = new TableColumn<>("Valor");
@@ -98,39 +102,83 @@ public class ResultsTabPane extends TabPane {
 
         tokensTable.getColumns().addAll(tokenValueCol, tokenTypeCol, tokenPositionCol);
 
-        // Tabla de Errores
+        // Tabla de Errores - CORREGIDO
         TableColumn<AnalysisError, String> errorTypeCol = new TableColumn<>("Tipo");
-        errorTypeCol.setCellValueFactory(new PropertyValueFactory<>("errorType"));
+        errorTypeCol.setCellValueFactory(cellData -> {
+            AnalysisError error = cellData.getValue();
+            return new SimpleStringProperty(error.getErrorType().getDisplayName());
+        });
         errorTypeCol.setPrefWidth(100);
+        errorTypeCol.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(item);
+                    // Aplicar estilo según tipo de error
+                    switch (item) {
+                        case "Léxico":
+                            setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
+                            break;
+                        case "Sintáctico":
+                            setStyle("-fx-text-fill: orange; -fx-font-weight: bold;");
+                            break;
+                        case "Semántico":
+                            setStyle("-fx-text-fill: blue; -fx-font-weight: bold;");
+                            break;
+                        default:
+                            setStyle("");
+                    }
+                }
+            }
+        });
 
         TableColumn<AnalysisError, String> errorMessageCol = new TableColumn<>("Mensaje");
-        errorMessageCol.setCellValueFactory(new PropertyValueFactory<>("message"));
+        errorMessageCol.setCellValueFactory(cellData -> {
+            AnalysisError error = cellData.getValue();
+            return new SimpleStringProperty(error.getMessage());
+        });
         errorMessageCol.setPrefWidth(300);
 
         TableColumn<AnalysisError, String> errorPositionCol = new TableColumn<>("Posición");
-        errorPositionCol.setCellValueFactory(new PropertyValueFactory<>("position"));
+        errorPositionCol.setCellValueFactory(cellData -> {
+            AnalysisError error = cellData.getValue();
+            return new SimpleStringProperty(error.getPosition());
+        });
         errorPositionCol.setPrefWidth(80);
 
         errorsTable.getColumns().addAll(errorTypeCol, errorMessageCol, errorPositionCol);
 
-        // Tabla de Símbolos
+        // Tabla de Símbolos - CORREGIDO
         TableColumn<Symbol, String> symbolNameCol = new TableColumn<>("Nombre");
-        symbolNameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+        symbolNameCol.setCellValueFactory(cellData -> {
+            Symbol symbol = cellData.getValue();
+            return new SimpleStringProperty(symbol.getName());
+        });
         symbolNameCol.setPrefWidth(120);
-//
-        // Asegúrate de que Symbol tenga un método getName() que retorne el nombre del símbolo
+
         TableColumn<Symbol, String> symbolTypeCol = new TableColumn<>("Tipo");
-        symbolTypeCol.setCellValueFactory(new PropertyValueFactory<>("symbolType"));
+        symbolTypeCol.setCellValueFactory(cellData -> {
+            Symbol symbol = cellData.getValue();
+            return new SimpleStringProperty(symbol.getSymbolType().getDisplayName());
+        });
         symbolTypeCol.setPrefWidth(100);
-        // Asegúrate de que Symbol tenga un método getSymbolType() que retorne el tipo del símbolo
 
         TableColumn<Symbol, String> symbolDataTypeCol = new TableColumn<>("Tipo Dato");
-        symbolDataTypeCol.setCellValueFactory(new PropertyValueFactory<>("dataType"));
+        symbolDataTypeCol.setCellValueFactory(cellData -> {
+            Symbol symbol = cellData.getValue();
+            return new SimpleStringProperty(symbol.getDataType());
+        });
         symbolDataTypeCol.setPrefWidth(100);
-        // Asegúrate de que Symbol tenga un método getDataType() que retorne el tipo de dato del símbolo
 
         TableColumn<Symbol, String> symbolScopeCol = new TableColumn<>("Ámbito");
-        symbolScopeCol.setCellValueFactory(new PropertyValueFactory<>("scope"));
+        symbolScopeCol.setCellValueFactory(cellData -> {
+            Symbol symbol = cellData.getValue();
+            return new SimpleStringProperty(symbol.getScope());
+        });
         symbolScopeCol.setPrefWidth(100);
 
         symbolsTable.getColumns().addAll(symbolNameCol, symbolTypeCol, symbolDataTypeCol, symbolScopeCol);
@@ -144,41 +192,126 @@ public class ResultsTabPane extends TabPane {
     }
 
     public void updateResults(AnalysisController.AnalysisResult result) {
-        // Actualizar lenguaje
-        if (result.getLanguage() != null) {
-           languageLabel.setText(result.getLanguage().getDisplayName() +
-            " - " + result.getLanguage().getDescription());
-        }
+        System.out.println("=== UPDATING RESULTS DEBUG ===");
 
-        // Actualizar tokens
-        if (result.getTokens() != null) {
-            ObservableList<Token> tokenData = FXCollections.observableArrayList(result.getTokens());
+        try {
+            // Actualizar lenguaje
+            if (result.getLanguage() != null) {
+                languageLabel.setText(result.getLanguage().getDisplayName());
+                System.out.println("Language: " + result.getLanguage().getDisplayName());
+            } else {
+                languageLabel.setText("No detectado");
+                System.out.println("Language: null");
+            }
+
+            // Actualizar tokens
+            ObservableList<Token> tokenData = FXCollections.observableArrayList();
+            if (result.getTokens() != null && !result.getTokens().isEmpty()) {
+                tokenData.addAll(result.getTokens());
+                System.out.println("Tokens count: " + tokenData.size());
+                // Mostrar algunos tokens de ejemplo
+                for (int i = 0; i < Math.min(3, tokenData.size()); i++) {
+                    Token token = tokenData.get(i);
+                    System.out.println("  Token " + i + ": " + token.getValue() + " (" + token.getType() + ") [" + token.getLine() + ":" + token.getColumn() + "]");
+                }
+            } else {
+                System.out.println("No tokens found");
+            }
             tokensTable.setItems(tokenData);
-        }
 
-        // Actualizar errores
-        List<AnalysisError> allErrors = result.getAllErrors();
-        ObservableList<AnalysisError> errorData = FXCollections.observableArrayList(allErrors);
-        errorsTable.setItems(errorData);
+            // Actualizar errores - CON DEBUGGING DETALLADO
+            ObservableList<AnalysisError> errorData = FXCollections.observableArrayList();
 
-        // Actualizar símbolos
-        if (result.getSymbolTable() != null) {
-            ObservableList<Symbol> symbolData = FXCollections.observableArrayList(
-                    result.getSymbolTable().values()
-            );
+            System.out.println("=== ERRORS DEBUG ===");
+
+            if (result.getLexicalErrors() != null) {
+                System.out.println("Lexical errors count: " + result.getLexicalErrors().size());
+                for (AnalysisError error : result.getLexicalErrors()) {
+                    System.out.println("  Lexical Error: " + error.getFullMessage());
+                    System.out.println("    Type: " + error.getErrorType());
+                    System.out.println("    Message: " + error.getMessage());
+                    System.out.println("    Position: " + error.getPosition());
+                }
+                errorData.addAll(result.getLexicalErrors());
+            }
+
+            if (result.getSyntacticErrors() != null) {
+                System.out.println("Syntactic errors count: " + result.getSyntacticErrors().size());
+                for (AnalysisError error : result.getSyntacticErrors()) {
+                    System.out.println("  Syntactic Error: " + error.getFullMessage());
+                }
+                errorData.addAll(result.getSyntacticErrors());
+            }
+
+            if (result.getSemanticErrors() != null) {
+                System.out.println("Semantic errors count: " + result.getSemanticErrors().size());
+                for (AnalysisError error : result.getSemanticErrors()) {
+                    System.out.println("  Semantic Error: " + error.getFullMessage());
+                }
+                errorData.addAll(result.getSemanticErrors());
+            }
+
+            System.out.println("Total errors for table: " + errorData.size());
+
+            // Verificar que los errores tienen datos válidos
+            for (int i = 0; i < errorData.size(); i++) {
+                AnalysisError error = errorData.get(i);
+                System.out.println("Error " + i + " validation:");
+                System.out.println("  Message null?: " + (error.getMessage() == null));
+                System.out.println("  Type null?: " + (error.getErrorType() == null));
+                System.out.println("  Position: " + error.getLine() + ":" + error.getColumn());
+            }
+
+            errorsTable.setItems(errorData);
+
+            // Forzar refresh de la tabla
+            errorsTable.refresh();
+
+            // Actualizar símbolos
+            ObservableList<Symbol> symbolData = FXCollections.observableArrayList();
+            if (result.getSymbolTable() != null && !result.getSymbolTable().isEmpty()) {
+                symbolData.addAll(result.getSymbolTable().values());
+                System.out.println("Symbols count: " + symbolData.size());
+                // Mostrar algunos símbolos de ejemplo
+                for (int i = 0; i < Math.min(3, symbolData.size()); i++) {
+                    Symbol symbol = symbolData.get(i);
+                    System.out.println("  Symbol " + i + ": " + symbol.getName() + " (" + symbol.getSymbolType() + ")");
+                }
+            } else {
+                System.out.println("No symbols found");
+            }
             symbolsTable.setItems(symbolData);
+
+            // Actualizar salida de ejecución
+            if (result.getExecutionOutput() != null && !result.getExecutionOutput().isEmpty()) {
+                outputTextArea.setText(String.join("\n", result.getExecutionOutput()));
+            } else {
+                outputTextArea.setText("No hay salida de ejecución disponible.");
+            }
+
+            // Actualizar contadores en las pestañas
+            int totalErrors = errorData.size();
+            int totalTokens = tokenData.size();
+            int totalSymbols = symbolData.size();
+
+            errorsTab.setText(String.format("Errores (%d)", totalErrors));
+            tokensTab.setText(String.format("Tokens (%d)", totalTokens));
+            symbolsTab.setText(String.format("Símbolos (%d)", totalSymbols));
+
+            System.out.println("Tab counters - Errors: " + totalErrors + ", Tokens: " + totalTokens + ", Symbols: " + totalSymbols);
+
+            // Si hay errores, cambiar a la pestaña de errores
+            if (totalErrors > 0) {
+                getSelectionModel().select(errorsTab);
+                System.out.println("Switched to errors tab");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error updating results: " + e.getMessage());
+            e.printStackTrace();
         }
 
-        // Actualizar salida
-        if (result.getExecutionOutput() != null) {
-            String output = String.join("\n", result.getExecutionOutput());
-            outputTextArea.setText(output);
-        }
-
-        // Actualizar badges de conteo en las pestañas
-        tokensTab.setText("Tokens (" + (result.getTokens() != null ? result.getTokens().size() : 0) + ")");
-        errorsTab.setText("Errores (" + allErrors.size() + ")");
-        symbolsTab.setText("Símbolos (" + (result.getSymbolTable() != null ? result.getSymbolTable().size() : 0) + ")");
+        System.out.println("=== RESULTS UPDATE COMPLETE ===");
     }
 
     public void clearResults() {

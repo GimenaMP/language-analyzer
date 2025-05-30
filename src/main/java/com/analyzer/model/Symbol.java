@@ -51,8 +51,61 @@ public class Symbol {
         this(name, symbolType, "unknown", "global");
     }
 
+    public SymbolType getSymbolType() {
+        return symbolType;
+    }
 
-    public void setDeclarationLine(int declarationLine) { this.declarationLine = declarationLine; }
+    public void setSymbolType(SymbolType symbolType) {
+        this.symbolType = symbolType;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDataType() {
+        return dataType;
+    }
+
+    public void setDataType(String dataType) {
+        this.dataType = dataType;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public void setValue(Object value) {
+        this.value = value;
+    }
+
+    public int getDeclarationLine() {
+        return declarationLine;
+    }
+
+    public void setDeclarationLine(int declarationLine) {
+        this.declarationLine = declarationLine;
+    }
+
+    public boolean isInitialized() {
+        return isInitialized;
+    }
+
+    public void setInitialized(boolean initialized) {
+        isInitialized = initialized;
+    }
 
     public String getValueAsString() {
         if (value == null) return isInitialized ? "null" : "no inicializado";

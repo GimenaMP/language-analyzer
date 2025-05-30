@@ -17,6 +17,7 @@ public class SQLLexicalAnalyzer implements ILexicalAnalyzer {
 
     private final SQLRegexTokenizer tokenizer = new SQLRegexTokenizer();
     private List<Symbol> symbolTable;
+    private List<AnalysisError> errorList;
 
     /**
      * Tokeniza el código SQL/PLSQL en una lista de tokens con información de línea y columna.
@@ -36,6 +37,7 @@ public class SQLLexicalAnalyzer implements ILexicalAnalyzer {
     public List<Token> analyzeLexical(String fuente, List<AnalysisError> errores) {
         List<Token> tokens = tokenizer.tokenize(fuente);
         symbolTable = new ArrayList<>();
+        errorList = errores;
 
         for (Token token : tokens) {
             String type = token.getType();
@@ -43,38 +45,79 @@ public class SQLLexicalAnalyzer implements ILexicalAnalyzer {
             int line = token.getLine();
             int column = token.getColumn();
 
-            // Registrar símbolo según tipo de token
+            // Registro de símbolos
             SymbolType symType;
-            if ("IDENTIFICADOR".equals(type) ) {
+            if ("IDENTIFICADOR".equals(type)) {
                 symType = SymbolType.VARIABLE;
+            } else if ("TABLE_NAME".equals(type)) {
+                symType = SymbolType.TABLE;
+            } else if ("COLUMN_NAME".equals(type)) {
+                symType = SymbolType.COLUMN;
             } else if ("NUMERO".equals(type) || "CADENA".equals(type)) {
                 symType = SymbolType.CONSTANT;
             } else {
                 symType = SymbolType.UNKNOWN;
             }
+
             Symbol sym = new Symbol(lexeme, symType);
             sym.setDeclarationLine(line);
             sym.setDeclarationColumn(column);
+            sym.setScope("global");
+            sym.setDataType(type);
             symbolTable.add(sym);
 
-            // Detectar y reportar errores léxicos
+            // Manejo de errores
             if (type.startsWith("ERROR_") || "INVALIDO".equals(type)) {
-                String description;
                 switch (type) {
-                    case "ERROR_COMENTARIO":    description = "Comentario mal formado";     break;
-                    case "ERROR_CADENA":        description = "Cadena sin cerrar";          break;
-                    case "ERROR_NUMERO":        description = "Número mal formado";          break;
-                    case "ERROR_IDENTIFICADOR": description = "Identificador inválido";     break;
-                    case "ERROR_OPERADOR":      description = "Operador inválido";          break;
-                    case "INVALIDO":            description = "Token desconocido";           break;
-                    default:                     description = "Error léxico en token";      break;
+                    case "ERROR_COMENTARIO":
+                        errores.add(new AnalysisError(
+                            "Comentario mal formado",
+                            AnalysisError.ErrorType.LEXICAL,
+                            line,
+                            column
+                        ));
+                        break;
+                    case "ERROR_CADENA":
+                        errores.add(new AnalysisError(
+                            "Cadena sin cerrar",
+                            AnalysisError.ErrorType.LEXICAL,
+                            line,
+                            column
+                        ));
+                        break;
+                    case "ERROR_NUMERO":
+                        errores.add(new AnalysisError(
+                            "Número mal formado",
+                            AnalysisError.ErrorType.LEXICAL,
+                            line,
+                            column
+                        ));
+                        break;
+                    case "ERROR_IDENTIFICADOR":
+                        errores.add(new AnalysisError(
+                            "Identificador inválido",
+                            AnalysisError.ErrorType.LEXICAL,
+                            line,
+                            column
+                        ));
+                        break;
+                    case "ERROR_OPERADOR":
+                        errores.add(new AnalysisError(
+                            "Operador inválido",
+                            AnalysisError.ErrorType.LEXICAL,
+                            line,
+                            column
+                        ));
+                        break;
+                    case "INVALIDO":
+                        errores.add(new AnalysisError(
+                            "Token desconocido: '" + lexeme + "'",
+                            AnalysisError.ErrorType.LEXICAL,
+                            line,
+                            column
+                        ));
+                        break;
                 }
-                errores.add(new AnalysisError(
-                        String.format("%s: '%s' (línea %d, columna %d)", description, lexeme, line, column),
-                        AnalysisError.ErrorType.LEXICAL,
-                        line,
-                        column
-                ));
             }
         }
         return tokens;
@@ -86,18 +129,23 @@ public class SQLLexicalAnalyzer implements ILexicalAnalyzer {
      * @param language el lenguaje (ignorado en esta implementación)
      * @return lista de tokens generados
      */
-        @Override
-        public List<Token> analyze(String code, LanguageType language) {
-            return analyzeLexical(code, new ArrayList<>());
-        }
+    @Override
+    public List<Token> analyze(String code, LanguageType language) {
+        return analyzeLexical(code, new ArrayList<>());
+    }
 
-        /**
-         * Devuelve la tabla de símbolos generada.
-         * @return lista inmutable de símbolos
-         */
-        public List<Symbol> getSymbolTable() {
-            return Collections.unmodifiableList(symbolTable);
-        }
+    /**
+     * Devuelve la tabla de símbolos generada.
+     * @return lista inmutable de símbolos
+     */
+    public List<Symbol> getSymbolTable() {
+        return Collections.unmodifiableList(symbolTable);
+    }
+
+    /// Devuelve la lista de errores léxicos detectados.
+    public List<AnalysisError> getErrorList() {
+        return Collections.unmodifiableList(errorList);
+    }
 
     }
 

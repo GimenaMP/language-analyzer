@@ -33,58 +33,109 @@ public class PythonLexicalAnalyzer implements ILexicalAnalyzer {
      * Devuelve la lista de tokens generados.
      */
     @Override
-    public List<Token> analyzeLexical(String fuente, List<AnalysisError> errores) {
-        this.errorList = errores;
-        List<Token> tokens = tokenizer.tokenize(fuente);
+    public List<Token> analyzeLexical(String source, List<AnalysisError> errors) {
+        List<Token> tokens = tokenizer.tokenize(source);
         symbolTable = new ArrayList<>();
-        int line = 1;
-
+        errorList = errors;
 
         for (Token token : tokens) {
             String type = token.getType();
             String lexeme = token.getValue();
+            int line = token.getLine();
             int column = token.getColumn();
 
-            // Actualiza línea según saltos en el lexema
-            for (char c : lexeme.toCharArray()) {
-                if (c == '\n') line++;
+            // Registro de símbolos
+            if ("IDENTIFIER".equals(type)) {
+                Symbol symbol = new Symbol(lexeme, SymbolType.VARIABLE);
+                symbol.setDeclarationLine(line);
+                symbol.setDeclarationColumn(column);
+                symbolTable.add(symbol);
             }
 
-            // Registra símbolo
-            SymbolType symType;
-            if ("IDENTIFICADOR".equals(type)) {
-                symType = SymbolType.VARIABLE;
-            } else if ("NUMBER".equals(type) || "STRING".equals(type)) {
-                symType = SymbolType.CONSTANT;
-            } else {
-                symType = SymbolType.UNKNOWN;
-            }
-            Symbol sym = new Symbol(lexeme, symType);
-            sym.setDeclarationLine(line);
-            sym.setDeclarationColumn(column);
-            symbolTable.add(sym);
-
-            // Reporta errores léxicos
-            if (type.startsWith("ERROR_") || "INVALIDO".equals(type)) {
+            // Manejo de errores
+            if (type.startsWith("ERROR_") || type.equals("INVALID_COMMENT") || type.equals("INVALIDO")) {
                 String description;
                 switch (type) {
-                    case "ERROR_COMMENT":           description = "Comentario inválido"; break;
-                    case "INVALID_COMMENT":         description = "Comentario mal formado"; break;
-                    case "ERROR_CADENA_DOUBLE":    description = "Cadena doble sin cerrar"; break;
-                    case "ERROR_CADENA_SINGLE":    description = "Cadena simple sin cerrar"; break;
-                    case "ERROR_NUMERO_MULT_PUNTOS": description = "Número con múltiples puntos"; break;
-                    case "ERROR_LIT_BINARIO":      description = "Literal binario inválido"; break;
-                    case "ERROR_IDENTIFICADOR":    description = "Identificador inválido"; break;
-                    case "ERROR_OPERADOR_SEQ":     description = "Secuencia de operador inválida"; break;
-                    case "INVALIDO":               description = "Token desconocido"; break;
-                    default:                       description = "Error léxico"; break;
+                    case "ERROR_COMMENT":
+
+                        errors.add(new AnalysisError(
+                                "Comentario mal formado",
+                                AnalysisError.ErrorType.LEXICAL,
+                                line,
+                                column
+                        ));
+
+                        break;
+
+
+                    case "ERROR_CADENA_DOUBLE":
+                        errors.add(new AnalysisError(
+                                "Cadena doble sin cerrar",
+                                AnalysisError.ErrorType.LEXICAL,
+                                line,
+                                column
+                        ));
+
+                        break;
+                    case "ERROR_CADENA_SINGLE":
+                        errors.add(new AnalysisError(
+                                "Cadena simple sin cerrar",
+                                AnalysisError.ErrorType.LEXICAL,
+                                line,
+                                column
+                        ));
+                    case "ERROR_IDENTIFICADOR":
+                        errors.add(new AnalysisError(
+                                "Identificador inválido (no puede comenzar con un dígito)",
+                                AnalysisError.ErrorType.LEXICAL,
+                                line,
+                                column
+                        ));
+                        break;
+                    case "ERROR_NUMERO_MULT_PUNTOS":
+                        errors.add(new AnalysisError(
+                                "Número con múltiples puntos decimales",
+                                AnalysisError.ErrorType.LEXICAL,
+                                line,
+                                column
+                        ));
+
+                        break;
+                    case "ERROR_LIT_BINARIO":
+                        errors.add(new AnalysisError(
+                                "Literal binario inválido",
+                                AnalysisError.ErrorType.LEXICAL,
+                                line,
+                                column
+                        ));
+
+                        break;
+
+
+
+                    case "ERROR_OPERADOR_SEQ":
+                        errors.add(new AnalysisError(
+                                "operador secuencial inválido",
+                                AnalysisError.ErrorType.LEXICAL,
+                                line,
+                                column
+                        ));
+
+                        break;
+
+                    case "INVALIDO":
+                        errors.add(new AnalysisError(
+                                "Token inválido: '" + lexeme + "'",
+                                AnalysisError.ErrorType.LEXICAL,
+                                line,
+                                column
+                        ));
+
+                        break;
+                    default:
+
+                        break;
                 }
-                errores.add(new AnalysisError(
-                    String.format("%s: '%s' (línea %d)", description, lexeme.trim(), line),
-                    AnalysisError.ErrorType.LEXICAL,
-                    line,
-                    column
-                ));
             }
         }
         return tokens;

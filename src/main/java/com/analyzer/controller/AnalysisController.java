@@ -54,38 +54,69 @@ public class AnalysisController {
             LanguageType language = languageDetector.detectLanguage(code);
             result.setLanguage(language);
 
-            // 2. Análisis léxico con tabla de errores y símbolos
+            // 2. Análisis léxico con manejo explícito de errores
             List<AnalysisError> lexicalErrors = new ArrayList<>();
             List<Token> tokens = lexicalAnalyzer.analyzeLexical(code, lexicalErrors);
+
+            // Asegurar que los errores se propaguen correctamente
+            result.setLexicalErrors(new ArrayList<>(lexicalErrors));
             result.setTokens(tokens);
-            result.setLexicalErrors(lexicalErrors);
 
-            // 3. Obtener tabla de símbolos del analizador léxico si es PythonLexicalAnalyzer
-            if (lexicalAnalyzer instanceof PythonLexicalAnalyzer) {
-                PythonLexicalAnalyzer pythonAnalyzer = (PythonLexicalAnalyzer) lexicalAnalyzer;
-                Map<String, Symbol> symbolTable = new HashMap<>();
-                pythonAnalyzer.getSymbolTable().forEach(symbol -> 
-                    symbolTable.put(symbol.getName(), symbol));
-                result.setSymbolTable(symbolTable);
+            // 3. Obtener tabla de símbolos según el analizador específico
+            Map<String, Symbol> symbolTable = new HashMap<>();
+            if (lexicalAnalyzer instanceof LexicalAnalyzerService) {
+                LexicalAnalyzerService service = (LexicalAnalyzerService) lexicalAnalyzer;
+                ILexicalAnalyzer specificAnalyzer = service.getAnalyzerForLanguage(language);
+
+                if (specificAnalyzer != null) {
+                    // Obtener tabla de símbolos de cada analizador específico
+                    if (specificAnalyzer instanceof PythonLexicalAnalyzer) {
+                        ((PythonLexicalAnalyzer) specificAnalyzer).getSymbolTable()
+                                .forEach(symbol -> symbolTable.put(symbol.getName(), symbol));
+                    } else if (specificAnalyzer instanceof HTMLLexicalAnalyzer) {
+                        ((HTMLLexicalAnalyzer) specificAnalyzer).getSymbolTable()
+                                .forEach(symbol -> symbolTable.put(symbol.getName(), symbol));
+                    } else if (specificAnalyzer instanceof SQLLexicalAnalyzer) {
+                        ((SQLLexicalAnalyzer) specificAnalyzer).getSymbolTable()
+                                .forEach(symbol -> symbolTable.put(symbol.getName(), symbol));
+                    }
+                }
             }
-
-            // 3. Análisis sintáctico
-            List<AnalysisError> syntacticErrors = syntacticAnalyzer.analyze(tokens, language);
-            result.setSyntacticErrors(syntacticErrors);
-
-            // 4. Análisis semántico con tabla de símbolos inicializada
-            Map<String, Symbol> symbolTable = result.getSymbolTable() != null ? result.getSymbolTable() : new HashMap<>();
-            List<AnalysisError> semanticErrors = semanticAnalyzer.analyze(tokens, language, symbolTable);
-            result.setSemanticErrors(semanticErrors);
             result.setSymbolTable(symbolTable);
 
-            // 5. Simulación de ejecución
+            // 4. Análisis sintáctico
+            List<AnalysisError> syntacticErrors = syntacticAnalyzer.analyze(tokens, language);
+            result.setSyntacticErrors(syntacticErrors != null ? syntacticErrors : new ArrayList<>());
+
+            // 5. Análisis semántico con tabla de símbolos inicializada
+            List<AnalysisError> semanticErrors = semanticAnalyzer.analyze(tokens, language, symbolTable);
+            result.setSemanticErrors(semanticErrors != null ? semanticErrors : new ArrayList<>());
+
+            // Actualizar la tabla de símbolos después del análisis semántico
+            result.setSymbolTable(symbolTable);
+
+            // 6. Simulación de ejecución
             List<String> executionOutput = executionSimulator.simulateExecution(
                     tokens, language, List.copyOf(symbolTable.values())
             );
-            result.setExecutionOutput(executionOutput);
+            result.setExecutionOutput(executionOutput != null ? executionOutput : new ArrayList<>());
 
             result.setSuccess(true);
+
+            // Debug: Imprimir información para verificar
+            System.out.println("=== DEBUG INFO ===");
+            System.out.println("Language: " + language);
+            System.out.println("Tokens: " + (tokens != null ? tokens.size() : 0));
+            System.out.println("Lexical Errors: " + result.getLexicalErrors().size());
+            System.out.println("Syntactic Errors: " + result.getSyntacticErrors().size());
+            System.out.println("Semantic Errors: " + result.getSemanticErrors().size());
+            System.out.println("Symbols: " + symbolTable.size());
+
+            // Imprimir algunos símbolos para debug
+            if (!symbolTable.isEmpty()) {
+                System.out.println("Sample symbols:");
+                symbolTable.values().stream().limit(3).forEach(System.out::println);
+            }
 
         } catch (Exception e) {
             result.setSuccess(false);
@@ -93,6 +124,7 @@ public class AnalysisController {
                     "Error interno: " + e.getMessage(),
                     AnalysisError.ErrorType.LEXICAL
             ));
+            e.printStackTrace(); // Para debug
         }
 
         return result;

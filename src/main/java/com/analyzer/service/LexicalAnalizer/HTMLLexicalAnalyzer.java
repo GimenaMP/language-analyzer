@@ -15,6 +15,7 @@ public class HTMLLexicalAnalyzer implements ILexicalAnalyzer {
 
     private final HTMLRegexTokenizer tokenizer = new HTMLRegexTokenizer();
     private List<Symbol> symbolTable;
+    private List<AnalysisError> errorList;
 
     @Override
     public List<Token> tokenize(String code) {
@@ -25,22 +26,20 @@ public class HTMLLexicalAnalyzer implements ILexicalAnalyzer {
     public List<Token> analyzeLexical(String source, List<AnalysisError> errors) {
         List<Token> tokens = tokenizer.tokenize(source);
         symbolTable = new ArrayList<>();
-        int line = 1;
+        errorList = errors;
 
         for (Token token : tokens) {
             String type = token.getType();
             String lexeme = token.getValue();
+            int line = token.getLine();
             int column = token.getColumn();
 
-            for (char c : lexeme.toCharArray()) {
-                if (c == '\n') line++;
-            }
-
+            // Registro de símbolos
             SymbolType symType;
             if ("TAG_NAME".equals(type)) {
-                symType = SymbolType.FUNCTION;
+                symType = SymbolType.TAG;
             } else if ("ATTRIBUTE_NAME".equals(type)) {
-                symType = SymbolType.VARIABLE;
+                symType = SymbolType.ATTRIBUTE;
             } else if ("STRING".equals(type) || "NUMBER".equals(type)) {
                 symType = SymbolType.CONSTANT;
             } else {
@@ -50,40 +49,69 @@ public class HTMLLexicalAnalyzer implements ILexicalAnalyzer {
             Symbol sym = new Symbol(lexeme, symType);
             sym.setDeclarationLine(line);
             sym.setDeclarationColumn(column);
+            sym.setScope("global");
+            sym.setDataType(type);
             symbolTable.add(sym);
 
+            // Manejo de errores
             if (type.startsWith("ERROR_") || "INVALID".equals(type)) {
-                String description;
                 switch (type) {
-                    case "ERROR_COMENTARIO": description = "Comentario mal formado"; break;
-                    case "ERROR_DOCTYPE": description = "DOCTYPE mal formado"; break;
-                    case "ERROR_ATRIBUTO": description = "Atributo mal formado"; break;
-                    case "ERROR_ENTIDAD" : description = "Entidad HTML mal formada"; break;
-                    case "INVALIDO": description = "Token inválido"; break;
-                    default: description = "Error léxico"; break;
+                    case "ERROR_COMENTARIO":
+                        errors.add(new AnalysisError(
+                            "Comentario mal formado",
+                            AnalysisError.ErrorType.LEXICAL,
+                            line,
+                            column
+                        ));
+                        break;
+                    case "ERROR_DOCTYPE":
+                        errors.add(new AnalysisError(
+                            "DOCTYPE mal formado",
+                            AnalysisError.ErrorType.LEXICAL,
+                            line,
+                            column
+                        ));
+                        break;
+                    case "ERROR_ATRIBUTO":
+                        errors.add(new AnalysisError(
+                            "Atributo mal formado",
+                            AnalysisError.ErrorType.LEXICAL,
+                            line,
+                            column
+                        ));
+                        break;
+                    case "ERROR_ENTIDAD":
+                        errors.add(new AnalysisError(
+                            "Entidad HTML mal formada",
+                            AnalysisError.ErrorType.LEXICAL,
+                            line,
+                            column
+                        ));
+                        break;
+                    case "INVALIDO":
+                        errors.add(new AnalysisError(
+                            "Token inválido: '" + lexeme + "'",
+                            AnalysisError.ErrorType.LEXICAL,
+                            line,
+                            column
+                        ));
+                        break;
                 }
-                errors.add(new AnalysisError(
-                        String.format("%s: '%s' (línea %d)", description, lexeme.trim(), line),
-                        AnalysisError.ErrorType.LEXICAL,
-                        line,
-                        column
-                ));
             }
         }
-
         return tokens;
     }
-    //funcion para retornar los errores léxicos
-
-
-
 
     @Override
-    public List<Token> analyze(String code, LanguageType language) {//
+    public List<Token> analyze(String code, LanguageType language) {
         return analyzeLexical(code, new ArrayList<>());
     }
 
     public List<Symbol> getSymbolTable() {
         return Collections.unmodifiableList(symbolTable);
+    }
+
+    public List<AnalysisError> getErrorList() {
+        return Collections.unmodifiableList(errorList);
     }
 }

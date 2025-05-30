@@ -33,17 +33,45 @@ public class AnalysisError {
         this(message, errorType, 0, 0);
     }
 
-    // Getters y Setters
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
-    public int getLine() { return line; }
-    public void setLine(int line) { this.line = Math.max(0, line); }
-    public int getColumn() { return column; }
-    public void setColumn(int column) { this.column = Math.max(0, column); }
-    public ErrorType getErrorType() { return errorType; }
-    public void setErrorType(ErrorType errorType) { this.errorType = errorType; }
-    public String getSuggestion() { return suggestion; }
-    public void setSuggestion(String suggestion) { this.suggestion = suggestion; }
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public int getLine() {
+        return line;
+    }
+
+    public void setLine(int line) {
+        this.line = line;
+    }
+
+    public int getColumn() {
+        return column;
+    }
+
+    public void setColumn(int column) {
+        this.column = column;
+    }
+
+    public ErrorType getErrorType() {
+        return errorType;
+    }
+
+    public void setErrorType(ErrorType errorType) {
+        this.errorType = errorType;
+    }
+
+    public String getSuggestion() {
+        return suggestion;
+    }
+
+    public void setSuggestion(String suggestion) {
+        this.suggestion = suggestion;
+    }
 
     public String getPosition() { return line + ":" + column; }
 

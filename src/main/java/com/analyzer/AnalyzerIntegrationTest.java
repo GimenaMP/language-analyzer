@@ -32,8 +32,8 @@ public class AnalyzerIntegrationTest {
                         "    return result\n" +       // Error: variable no declarada e indentación inconsistente
                         "\n" +
 
-                        "# Variables sin declarar y identificador inválido\n" +
-                        "345x = c + d\n" +           // Error: identificador inválido y variables no declaradas
+                        "/# Variables sin declarar y identificador inválido\n" +
+                        "345x = c ++ d\n" +           // Error: identificador inválido y variables no declaradas
                         "\n" +
                         "# Reasignación de built-in\n" +
                         "print != 'hola'\n" +         // Error: redefinición de built-in
