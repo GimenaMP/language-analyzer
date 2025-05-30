@@ -32,11 +32,21 @@ public class SyntacticAnalyzerService implements ISyntacticAnalyzer {
             List<AnalysisError> errors = new ArrayList<>();
             errors.add(new AnalysisError(
                     "No hay analizador sintáctico disponible para el lenguaje: " + language,
-                    AnalysisError.ErrorType.SYNTACTIC
+                    AnalysisError.ErrorType.SYNTACTIC,
+                    0,
+                    0
             ));
             return errors;
         }
 
         return currentAnalyzer.analyze(tokens, language);
+    }
+
+    public List<Symbol> getSymbolTable() {
+        if (currentAnalyzer instanceof HTMLSyntacticAnalyzer) {
+            return ((HTMLSyntacticAnalyzer) currentAnalyzer).getSymbolTable();
+        }
+        // Añadir más casos según se implementen otros analizadores
+        return new ArrayList<>();
     }
 }

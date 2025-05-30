@@ -1,20 +1,20 @@
 package com.analyzer.service.LexicalAnalizer;
 
 import java.util.*;
-import java.util.regex.*;
 
 import com.analyzer.model.Token;
-import com.analyzer.model.Symbol;
-import com.analyzer.model.Symbol.SymbolType;
 import com.analyzer.model.AnalysisError;
 import com.analyzer.model.LanguageType;
 import com.analyzer.service.interfaces.ILexicalAnalyzer;
 import com.analyzer.model.ExpresionesRegulares.HTMLRegexTokenizer;
 
+/**
+ * Implementación de ILexicalAnalyzer para HTML.
+ * Se apoya en expresiones regulares para tokenizar y detectar errores.
+ */
 public class HTMLLexicalAnalyzer implements ILexicalAnalyzer {
 
     private final HTMLRegexTokenizer tokenizer = new HTMLRegexTokenizer();
-    private List<Symbol> symbolTable;
     private List<AnalysisError> errorList;
 
     @Override
@@ -25,7 +25,6 @@ public class HTMLLexicalAnalyzer implements ILexicalAnalyzer {
     @Override
     public List<Token> analyzeLexical(String source, List<AnalysisError> errors) {
         List<Token> tokens = tokenizer.tokenize(source);
-        symbolTable = new ArrayList<>();
         errorList = errors;
 
         for (Token token : tokens) {
@@ -34,81 +33,35 @@ public class HTMLLexicalAnalyzer implements ILexicalAnalyzer {
             int line = token.getLine();
             int column = token.getColumn();
 
-            // Registro de símbolos
-            SymbolType symType;
-            if ("TAG_NAME".equals(type)) {
-                symType = SymbolType.TAG;
-            } else if ("ATTRIBUTE_NAME".equals(type)) {
-                symType = SymbolType.ATTRIBUTE;
-            } else if ("STRING".equals(type) || "NUMBER".equals(type)) {
-                symType = SymbolType.CONSTANT;
-            } else {
-                symType = SymbolType.UNKNOWN;
-            }
-
-            Symbol sym = new Symbol(lexeme, symType);
-            sym.setDeclarationLine(line);
-            sym.setDeclarationColumn(column);
-            sym.setScope("global");
-            sym.setDataType(type);
-            symbolTable.add(sym);
-
-            // Manejo de errores
-            if (type.startsWith("ERROR_") || "INVALID".equals(type)) {
+            // Manejo de errores léxicos
+            if (type.startsWith("ERROR_") || "INVALIDO".equals(type)||"TAG_RESERVADA_ABIERTA".equals(type)) {
+                String mensaje;
                 switch (type) {
                     case "ERROR_COMENTARIO":
-                        errors.add(new AnalysisError(
-                            "Comentario mal formado",
-                            AnalysisError.ErrorType.LEXICAL,
-                            line,
-                            column
-                        ));
-                        break;
+                        mensaje = "Comentario mal cerrado"; break;
                     case "ERROR_DOCTYPE":
-                        errors.add(new AnalysisError(
-                            "DOCTYPE mal formado",
-                            AnalysisError.ErrorType.LEXICAL,
-                            line,
-                            column
-                        ));
-                        break;
+                        mensaje = "DOCTYPE mal escrito"; break;
                     case "ERROR_ATRIBUTO":
-                        errors.add(new AnalysisError(
-                            "Atributo mal formado",
-                            AnalysisError.ErrorType.LEXICAL,
-                            line,
-                            column
-                        ));
-                        break;
+                        mensaje = "Atributo mal formado"; break;
                     case "ERROR_ENTIDAD":
-                        errors.add(new AnalysisError(
-                            "Entidad HTML mal formada",
-                            AnalysisError.ErrorType.LEXICAL,
-                            line,
-                            column
-                        ));
-                        break;
+                        mensaje = "Entidad HTML mal formada"; break;
                     case "INVALIDO":
-                        errors.add(new AnalysisError(
-                            "Token inválido: '" + lexeme + "'",
-                            AnalysisError.ErrorType.LEXICAL,
-                            line,
-                            column
-                        ));
-                        break;
+                        mensaje = "Carácter inválido: '" + lexeme + "'"; break;
+                    case "TAG_RESERVADA_ABIERTA":
+                        mensaje = "Etiqueta reservada falta cierre > '" + lexeme + "'"; break;
+                    default:
+                        mensaje = "Error léxico desconocido"; break;
                 }
+                errors.add(new AnalysisError(mensaje, AnalysisError.ErrorType.LEXICAL, line, column));
             }
         }
+
         return tokens;
     }
 
     @Override
     public List<Token> analyze(String code, LanguageType language) {
         return analyzeLexical(code, new ArrayList<>());
-    }
-
-    public List<Symbol> getSymbolTable() {
-        return Collections.unmodifiableList(symbolTable);
     }
 
     public List<AnalysisError> getErrorList() {

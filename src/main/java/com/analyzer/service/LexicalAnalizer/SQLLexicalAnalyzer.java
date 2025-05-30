@@ -147,5 +147,4 @@ public class SQLLexicalAnalyzer implements ILexicalAnalyzer {
         return Collections.unmodifiableList(errorList);
     }
 
-    }
-
+}

@@ -8,11 +8,36 @@ import java.util.Objects;
 
 public class Symbol {
 
+
+    public Symbol(String name, String tipoDisplayName, String scope, int line, int column) {
+        this.name = name != null ? name : "";
+        this.symbolType = SymbolType.fromDisplayName(tipoDisplayName);
+        this.dataType = "unknown";
+        this.scope = scope != null ? scope : "global";
+        this.declarationLine = line;
+        this.declarationColumn = column;
+        this.isInitialized = false;
+    }
+
+
+
+
+
     public enum SymbolType {
         VARIABLE("Variable"), FUNCTION("Función"), CLASS("Clase"),
         TABLE("Tabla"), COLUMN("Columna"), PARAMETER("Parámetro"),
         CONSTANT("Constante"), TAG("Etiqueta HTML"), ATTRIBUTE("Atributo"),
         UNKNOWN("Desconocido");
+
+        public static SymbolType fromDisplayName(String displayName) {
+            for (SymbolType type : values()) {
+                if (type.displayName.equalsIgnoreCase(displayName)) {
+                    return type;
+                }
+            }
+            return UNKNOWN;
+        }
+
 
 
         private final String displayName;
@@ -39,16 +64,22 @@ public class Symbol {
     public void setDeclarationColumn(int declarationColumn) { this.declarationColumn = declarationColumn; }
 
 
-    public Symbol(String name, SymbolType symbolType, String dataType, String scope) {
-        this.name = name != null ? name : "";
+    public Symbol(String name, SymbolType symbolType, String dataType, String scope, int line, int column) {
+        this.name = name != null ? name : ""; // Asegurar que el nombre no sea null
         this.symbolType = symbolType != null ? symbolType : SymbolType.UNKNOWN;
         this.dataType = dataType != null ? dataType : "unknown";
         this.scope = scope != null ? scope : "global";
+        this.declarationLine = line;
+        this.declarationColumn = column;
         this.isInitialized = false;
     }
 
+    public Symbol(String name, SymbolType symbolType, String scope, int line, int column) {
+        this(name, symbolType, "unknown", scope, line, column);
+    }
+
     public Symbol(String name, SymbolType symbolType) {
-        this(name, symbolType, "unknown", "global");
+        this(name, symbolType, "unknown", "global", 0, 0);
     }
 
     public SymbolType getSymbolType() {
