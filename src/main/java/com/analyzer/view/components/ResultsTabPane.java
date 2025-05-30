@@ -117,14 +117,17 @@ public class ResultsTabPane extends TabPane {
         TableColumn<Symbol, String> symbolNameCol = new TableColumn<>("Nombre");
         symbolNameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
         symbolNameCol.setPrefWidth(120);
-
+//
+        // Asegúrate de que Symbol tenga un método getName() que retorne el nombre del símbolo
         TableColumn<Symbol, String> symbolTypeCol = new TableColumn<>("Tipo");
         symbolTypeCol.setCellValueFactory(new PropertyValueFactory<>("symbolType"));
         symbolTypeCol.setPrefWidth(100);
+        // Asegúrate de que Symbol tenga un método getSymbolType() que retorne el tipo del símbolo
 
         TableColumn<Symbol, String> symbolDataTypeCol = new TableColumn<>("Tipo Dato");
         symbolDataTypeCol.setCellValueFactory(new PropertyValueFactory<>("dataType"));
         symbolDataTypeCol.setPrefWidth(100);
+        // Asegúrate de que Symbol tenga un método getDataType() que retorne el tipo de dato del símbolo
 
         TableColumn<Symbol, String> symbolScopeCol = new TableColumn<>("Ámbito");
         symbolScopeCol.setCellValueFactory(new PropertyValueFactory<>("scope"));
@@ -143,8 +146,8 @@ public class ResultsTabPane extends TabPane {
     public void updateResults(AnalysisController.AnalysisResult result) {
         // Actualizar lenguaje
         if (result.getLanguage() != null) {
-            languageLabel.setText(result.getLanguage().getDisplayName() +
-                    " - " + result.getLanguage().getDescription());
+           languageLabel.setText(result.getLanguage().getDisplayName() +
+            " - " + result.getLanguage().getDescription());
         }
 
         // Actualizar tokens

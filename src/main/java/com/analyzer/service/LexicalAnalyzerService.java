@@ -1,5 +1,3 @@
-
-// ---------- LexicalAnalyzerService.java ----------
 package com.analyzer.service;
 
 import com.analyzer.model.LanguageType;
@@ -9,13 +7,8 @@ import com.analyzer.model.AnalysisError;
 import com.analyzer.service.interfaces.ILexicalAnalyzer;
 import com.analyzer.service.interfaces.ILanguageDetector;
 
-
 import java.util.*;
 
-/**
- * Servicio orquestador para análisis léxico.
- * Delega a implementaciones específicas según el lenguaje detectado.
- */
 /**
  * Servicio orquestador para análisis léxico.
  * Delega a implementaciones específicas según el lenguaje detectado.
@@ -51,25 +44,48 @@ public class LexicalAnalyzerService implements ILexicalAnalyzer {
         return tokens;
     }
 
+    @Override
+    public List<Token> tokenize(String code) {
+        LanguageType language = detector.detectLanguage(code);
+        ILexicalAnalyzer analyzer = analizadores.get(language);
+        
+        if (analyzer == null) {
+            return analizarGenerico(code);
+        }
+        
+        return analyzer.tokenize(code);
+    }
 
     @Override
     public List<Token> analyze(String code, LanguageType language) {
         ultimosErrores.clear();
         ILexicalAnalyzer analizador = analizadores.get(language);
         if (analizador == null) {
-            return analizarGenerico(code);
+            throw new IllegalStateException("No hay analizador disponible para el lenguaje: " + language);
         }
         return analizador.analyze(code, language);
     }
 
     @Override
     public List<Token> analyzeLexical(String fuente, List<AnalysisError> errores) {
+        if (errores == null) {
+            errores = new ArrayList<>();
+        }
         ultimosErrores = errores;
+        
         LanguageType lenguaje = detector.detectLanguage(fuente);
         ILexicalAnalyzer analizador = analizadores.get(lenguaje);
+        
         if (analizador == null) {
+            errores.add(new AnalysisError(
+                "No se encontró analizador para el lenguaje detectado",
+                AnalysisError.ErrorType.LEXICAL,
+                1,
+                0
+            ));
             return analizarGenerico(fuente);
         }
+        
         return analizador.analyzeLexical(fuente, errores);
     }
 

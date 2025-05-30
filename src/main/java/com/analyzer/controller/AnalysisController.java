@@ -12,6 +12,7 @@ import com.analyzer.service.SyntacticAnalyzer.SQLSyntacticAnalyzer;
 import com.analyzer.service.interfaces.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,25 +54,32 @@ public class AnalysisController {
             LanguageType language = languageDetector.detectLanguage(code);
             result.setLanguage(language);
 
-            // 2. Análisis léxico
+            // 2. Análisis léxico con tabla de errores y símbolos
             List<AnalysisError> lexicalErrors = new ArrayList<>();
             List<Token> tokens = lexicalAnalyzer.analyzeLexical(code, lexicalErrors);
             result.setTokens(tokens);
             result.setLexicalErrors(lexicalErrors);
 
+            // 3. Obtener tabla de símbolos del analizador léxico si es PythonLexicalAnalyzer
+            if (lexicalAnalyzer instanceof PythonLexicalAnalyzer) {
+                PythonLexicalAnalyzer pythonAnalyzer = (PythonLexicalAnalyzer) lexicalAnalyzer;
+                Map<String, Symbol> symbolTable = new HashMap<>();
+                pythonAnalyzer.getSymbolTable().forEach(symbol -> 
+                    symbolTable.put(symbol.getName(), symbol));
+                result.setSymbolTable(symbolTable);
+            }
+
             // 3. Análisis sintáctico
             List<AnalysisError> syntacticErrors = syntacticAnalyzer.analyze(tokens, language);
             result.setSyntacticErrors(syntacticErrors);
 
-            // 4. Análisis semántico
-            List<AnalysisError> semanticErrors = semanticAnalyzer.analyze(tokens, language, null);
+            // 4. Análisis semántico con tabla de símbolos inicializada
+            Map<String, Symbol> symbolTable = result.getSymbolTable() != null ? result.getSymbolTable() : new HashMap<>();
+            List<AnalysisError> semanticErrors = semanticAnalyzer.analyze(tokens, language, symbolTable);
             result.setSemanticErrors(semanticErrors);
-
-            // 5. Obtener tabla de símbolos
-            Map<String, Symbol> symbolTable = semanticAnalyzer.getSymbolTable();
             result.setSymbolTable(symbolTable);
 
-            // 6. Simulación de ejecución
+            // 5. Simulación de ejecución
             List<String> executionOutput = executionSimulator.simulateExecution(
                     tokens, language, List.copyOf(symbolTable.values())
             );
