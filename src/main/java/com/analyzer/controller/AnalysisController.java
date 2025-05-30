@@ -6,6 +6,9 @@ import com.analyzer.service.*;
 import com.analyzer.service.LexicalAnalizer.HTMLLexicalAnalyzer;
 import com.analyzer.service.LexicalAnalizer.PythonLexicalAnalyzer;
 import com.analyzer.service.LexicalAnalizer.SQLLexicalAnalyzer;
+import com.analyzer.service.SemanticAnalyzer.*;
+
+import com.analyzer.service.SyntacticAnalyzer.SQLSyntacticAnalyzer;
 import com.analyzer.service.interfaces.*;
 
 import java.util.ArrayList;
@@ -34,7 +37,7 @@ public class AnalysisController {
                         LanguageType.PLSQL, new SQLLexicalAnalyzer()
                 )
         );
-        this.syntacticAnalyzer = new SyntacticAnalyzerService();
+        this.syntacticAnalyzer = new SQLSyntacticAnalyzer();
         this.semanticAnalyzer = new SemanticAnalyzerService();
         this.executionSimulator = new ExecutionSimulator();
     }

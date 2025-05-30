@@ -2,6 +2,8 @@
 // --- Symbol.java ---
 package com.analyzer.model;
 
+import com.analyzer.model.Token;
+
 import java.util.Objects;
 
 public class Symbol {
@@ -12,12 +14,17 @@ public class Symbol {
         CONSTANT("Constante"), TAG("Etiqueta HTML"), ATTRIBUTE("Atributo"),
         UNKNOWN("Desconocido");
 
+
         private final String displayName;
         SymbolType(String displayName) { this.displayName = displayName; }
         public String getDisplayName() { return displayName; }
         @Override
         public String toString() { return displayName; }
     }
+
+//    String MODULE = Token.getValue();
+//    // Asegúrate de usar un tipo existente en la enumeración o usa VARIABLE como alternativa temporal
+//    Symbol symbol = new Symbol(MODULE, Symbol.SymbolType.VARIABLE);
 
     private String name;
     private SymbolType symbolType;

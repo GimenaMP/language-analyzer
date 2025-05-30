@@ -43,7 +43,7 @@ public  class PythonLexicalAnalyzer implements ILexicalAnalyzer {
 
     // Conjunto de keywords Python
     private static final Set<String> KEYWORDS_PYTHON = Set.of(
-            "False", "None", "True", "and", "as", "assert", "async", "await", "break", "class","range",
+            "False", "None", "True", "and", "as", "assert", "async", "await", "break", "class", "range",
             "continue", "def", "del", "elif", "else", "except", "finally", "for", "from",
             "global", "if", "import", "in", "is", "lambda", "nonlocal", "not", "or", "pass",
             "raise", "return", "try", "while", "with", "yield", "print", "exec", "delattr", "getattr", "setattr", "hasattr"
@@ -117,20 +117,26 @@ public  class PythonLexicalAnalyzer implements ILexicalAnalyzer {
     private InfoIndentacion analizarIndentacion(String linea) {
         int espacios = 0;
         int tabs = 0;
+        int nivelIndentacion = 0;
 
         for (int i = 0; i < linea.length(); i++) {
             char c = linea.charAt(i);
             if (c == ' ') {
                 espacios++;
+                nivelIndentacion++;
             } else if (c == '\t') {
                 tabs++;
+                nivelIndentacion += 8; // Python considera cada tab como 8 espacios
             } else {
                 break;
             }
         }
 
+
         return new InfoIndentacion(espacios, tabs);
     }
+
+
 
     /**
      * Verifica consistencia entre tabs y espacios

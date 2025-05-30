@@ -5,12 +5,10 @@ package com.analyzer.service;
 import com.analyzer.model.LanguageType;
 import com.analyzer.model.Token;
 import com.analyzer.model.AnalysisError;
-import com.analyzer.service.LexicalAnalizer.HTMLLexicalAnalyzer;
-import com.analyzer.service.LexicalAnalizer.PythonLexicalAnalyzer;
-import com.analyzer.service.LexicalAnalizer.SQLLexicalAnalyzer;
+
 import com.analyzer.service.interfaces.ILexicalAnalyzer;
 import com.analyzer.service.interfaces.ILanguageDetector;
-import com.analyzer.service.interfaces.ISyntacticAnalyzer;
+
 
 import java.util.*;
 
@@ -33,46 +31,6 @@ public class LexicalAnalyzerService implements ILexicalAnalyzer {
         this.analizadores = analizadores;
     }
 
-
-    /**
-     * Analiza léxicamente la fuente y devuelve la lista de tokens.
-     * @param fuente texto a analizar
-     * @return lista de tokens encontrados
-     */
-    public List<Token> analyzeLexical(String fuente) {
-        ultimosErrores.clear();
-
-        if (fuente == null || fuente.trim().isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        // Detectar lenguaje
-        LanguageType lenguaje = detector.detectLanguage(fuente);
-
-        // Obtener analizador específico
-        ILexicalAnalyzer analizador = analizadores.get(lenguaje);
-        if (analizador == null) {
-            // Lenguaje no soportado, usar analizador genérico
-            return analizarGenerico(fuente);
-        }
-
-        // Realizar análisis léxico
-        List<Token> tokens = analizador.analyzeLexical(fuente, ultimosErrores);
-
-        return tokens;
-    }
-
-    /**
-     * Obtiene los errores del último análisis realizado.
-     * @return lista de errores léxicos encontrados
-     */
-    public List<AnalysisError> obtenerUltimosErrores() {
-        return new ArrayList<>(ultimosErrores);
-    }
-
-    /**
-     * Análisis genérico para lenguajes no soportados.
-     */
     private List<Token> analizarGenerico(String fuente) {
         List<Token> tokens = new ArrayList<>();
         String[] lineas = fuente.split("\n");
@@ -93,13 +51,6 @@ public class LexicalAnalyzerService implements ILexicalAnalyzer {
         return tokens;
     }
 
-    /**
-     * Obtiene información sobre los analizadores disponibles.
-     * @return conjunto de tipos de lenguaje soportados
-     */
-    public Set<LanguageType> obtenerLenguajesSoportados() {
-        return analizadores.keySet();
-    }
 
     @Override
     public List<Token> analyze(String code, LanguageType language) {
