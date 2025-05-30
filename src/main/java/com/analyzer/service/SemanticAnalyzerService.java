@@ -35,10 +35,11 @@ public class SemanticAnalyzerService implements ISemanticAnalyzer {
 
     @Override
     public List<AnalysisError> analyze(List<Token> tokens, LanguageType language, Map<String, Symbol> symbolTable) {
+        currentAnalyzer = analyzers.get(language); // Seleccionar analizador según el lenguaje
         if (currentAnalyzer == null) {
             List<AnalysisError> errors = new ArrayList<>();
             errors.add(new AnalysisError(
-                    "No hay analizador semántico disponible para el lenguaje",
+                    "No hay analizador semántico disponible para el lenguaje: " + language,
                     AnalysisError.ErrorType.SEMANTIC
             ));
             return errors;

@@ -67,6 +67,10 @@
                 <version>${javafx.maven.plugin.version}</version>
                 <configuration>
                     <mainClass>com.analyzer.MainApplication</mainClass>
+                    <executable>${java.home}/bin/java</executable>
+                    <arguments>
+                        <argument>--enable-native-access=javafx.graphics</argument>
+                    </arguments>
                 </configuration>
             </plugin>
 
