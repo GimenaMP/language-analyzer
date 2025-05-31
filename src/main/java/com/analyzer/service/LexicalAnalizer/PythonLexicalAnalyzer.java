@@ -83,7 +83,9 @@ public class PythonLexicalAnalyzer implements ILexicalAnalyzer {
                                 AnalysisError.ErrorType.LEXICAL,
                                 line,
                                 column
-                        ));
+                        ))
+                        ;
+                        break;
                     case "ERROR_IDENTIFICADOR":
                         errors.add(new AnalysisError(
                                 "Identificador inválido (no puede comenzar con un dígito)",

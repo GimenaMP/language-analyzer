@@ -44,15 +44,19 @@ public class PythonSemanticAnalyzer implements ISemanticAnalyzer {
         System.out.println("DEBUG - Símbolos en tabla: " + symbolTable.size());
 
         // 1. Preparar información de símbolos
+        System.out.println("DEBUG - Preparando información de símbolos...");
         prepareSymbolInformation();
 
         // 2. Analizar uso de variables y funciones
+        System.out.println("DEBUG - Analizando semántica de tokens...");
         analyzeTokenSemantics(tokens);
 
         // 3. Detectar variables no utilizadas
+        System.out.println("DEBUG - Detectando variables no utilizadas...");
         detectUnusedVariables();
 
         // 4. Detectar variables no inicializadas
+        System.out.println("DEBUG - Detectando variables no inicializadas...");
         detectUninitializedVariables();
 
         System.out.println("DEBUG - Análisis semántico completado. Errores encontrados: " + semanticErrors.size());
@@ -307,6 +311,8 @@ public class PythonSemanticAnalyzer implements ISemanticAnalyzer {
      * Analiza declaraciones return
      */
     private void analyzeReturnStatement(List<Token> tokens, int index) {
+
+        Token token = tokens.get(index);
         if (!currentScope.equals("global")) {
             // Return está dentro de una función, verificar expresión si existe
             if (index + 1 < tokens.size()) {

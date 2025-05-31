@@ -45,7 +45,7 @@ public class HTMLRegexTokenizer {
         // Etiquetas reservadas (apertura y cierre)
         String reserved = "html|head|body|title|div|span|p|a|ul|ol|li|table|tr|td|th|script|style|link|meta|header|footer|nav|section|article|aside|main|h1|h2|h3|h4|h5|h6";
         patterns.add(new TokenPattern("TAG_RESERVADA_CIERRE", "</(" + reserved + ")>"));
-        patterns.add(new TokenPattern("TAG_RESERVADA_ABIERTA", "<(" + reserved + ")\\b"));
+        patterns.add(new TokenPattern("TAG_RESERVADA_ABIERTA", "<(" + reserved + ")>"));
 
         // Etiquetas genéricas auto-cerradas
         patterns.add(new TokenPattern("TAG_SELF_CLOSED", "<[A-Za-z][A-Za-z0-9]*[^>]*/\\s*>"));

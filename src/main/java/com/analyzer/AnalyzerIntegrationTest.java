@@ -16,7 +16,7 @@ public class AnalyzerIntegrationTest {
         inicializar();
       //  probarAnalisisPython();
        probarAnalisisHtml();
-//        probarAnalisisPlsql();
+        probarAnalisisPlsql();
 
         System.out.println("\nPruebas de integración completadas.");
     }
@@ -69,18 +69,18 @@ public class AnalyzerIntegrationTest {
 
         verificarResultado(resultado, LanguageType.HTML);
     }
-//
-//    private void probarAnalisisPlsql() {
-//        System.out.println("\n=== Prueba de análisis PL/SQL ===");
-//        String codigoSql =
-//                "CREATE TABLE usuarios (id NUMBER, nombre VARCHAR2(50));\n" +
-//                        "SELECT * FROM usuarios\n" +  // Error sintáctico: falta punto y coma
-//                        "DELETE FROM usuarios;";  // Error semántico: sin WHERE
-//
-//        AnalysisController.AnalysisResult resultado = controller.performCompleteAnalysis(codigoSql);
-//
-//        verificarResultado(resultado, LanguageType.PLSQL);
-//    }
+
+    private void probarAnalisisPlsql() {
+        System.out.println("\n=== Prueba de análisis PL/SQL ===");
+        String codigoSql =
+                "CREATE TABLE usuarios (id NUMBER, nombre VARCHAR2(50));\n" +
+                        "SELECT * FROM usuarios\n" +  // Error sintáctico: falta punto y coma
+                        "DELETE FROM usuarios;";  // Error semántico: sin WHERE
+
+        AnalysisController.AnalysisResult resultado = controller.performCompleteAnalysis(codigoSql);
+
+        verificarResultado(resultado, LanguageType.PLSQL);
+    }
 
     private void verificarResultado(AnalysisController.AnalysisResult resultado, LanguageType lenguajeEsperado) {
         // Verificar detección de lenguaje

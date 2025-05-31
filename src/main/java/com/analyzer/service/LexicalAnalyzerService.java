@@ -1,132 +1,3 @@
-//package com.analyzer.service;
-//
-//import com.analyzer.model.LanguageType;
-//import com.analyzer.model.Token;
-//import com.analyzer.model.AnalysisError;
-//
-//import com.analyzer.service.LexicalAnalizer.HTMLLexicalAnalyzer;
-//import com.analyzer.service.LexicalAnalizer.PythonLexicalAnalyzer;
-//import com.analyzer.service.LexicalAnalizer.SQLLexicalAnalyzer;
-//import com.analyzer.service.interfaces.ILexicalAnalyzer;
-//import com.analyzer.service.interfaces.ILanguageDetector;
-//
-//import java.util.*;
-//
-///**
-// * Servicio orquestador para análisis léxico.
-// * Delega a implementaciones específicas según el lenguaje detectado.
-// */
-//public class LexicalAnalyzerService implements ILexicalAnalyzer {
-//
-//    private final Map<LanguageType, ILexicalAnalyzer> analizadores;
-//    private final ILanguageDetector detector;
-//    private List<AnalysisError> ultimosErrores = new ArrayList<>();
-//
-//    public LexicalAnalyzerService(ILanguageDetector detector, Map<LanguageType, ILexicalAnalyzer> analizadores) {
-//        this.detector = detector;
-//        this.analizadores = analizadores;
-//    }
-//
-//    public ILexicalAnalyzer getAnalyzerForLanguage(LanguageType language) {
-//        return analizadores.get(language);
-//    }
-//
-//    private List<Token> analizarGenerico(String fuente) {
-//        List<Token> tokens = new ArrayList<>();
-//        String[] lineas = fuente.split("\n");
-//
-//        for (int numeroLinea = 0; numeroLinea < lineas.length; numeroLinea++) {
-//            String linea = lineas[numeroLinea].trim();
-//            if (!linea.isEmpty()) {
-//                // Tokenización básica por palabras
-//                String[] palabras = linea.split("\\s+");
-//                for (int i = 0; i < palabras.length; i++) {
-//                    if (!palabras[i].isEmpty()) {
-//                        tokens.add(new Token(palabras[i], "GENERICO", numeroLinea + 1, i));
-//                    }
-//                }
-//            }
-//        }
-//
-//        return tokens;
-//    }
-//
-//    @Override
-//    public List<Token> tokenize(String code) {
-//        LanguageType language = detector.detectLanguage(code);
-//        ILexicalAnalyzer analyzer = analizadores.get(language);
-//
-//        if (analyzer == null) {
-//            return analizarGenerico(code);
-//        }
-//
-//        return analyzer.tokenize(code);
-//    }
-//
-//    @Override
-//    public List<Token> analyze(String code, LanguageType language) {
-//        ultimosErrores.clear();
-//        ILexicalAnalyzer analizador = analizadores.get(language);
-//        if (analizador == null) {
-//            throw new IllegalStateException("No hay analizador disponible para el lenguaje: " + language);
-//        }
-//        return analizador.analyze(code, language);
-//    }
-//
-//    @Override
-//    public List<Token> analyzeLexical(String fuente, List<AnalysisError> errores) {
-//        if (errores == null) {
-//            errores = new ArrayList<>();
-//        }
-//        ultimosErrores = errores;
-//
-//        try {
-//            LanguageType lenguaje = detector.detectLanguage(fuente);
-//            ILexicalAnalyzer analizador = analizadores.get(lenguaje);
-//
-//            if (analizador == null) {
-//                AnalysisError error = new AnalysisError(
-//                        "No se encontró analizador para el lenguaje detectado: " + lenguaje,
-//                        AnalysisError.ErrorType.LEXICAL,
-//                        1,
-//                        0
-//                );
-//                errores.add(error);
-//                return analizarGenerico(fuente);
-//            }
-//
-//            // Realizar análisis léxico - los errores ya se agregan dentro del método
-//            List<Token> tokens = analizador.analyzeLexical(fuente, errores);
-//
-//            // NO duplicar errores aquí - ya se agregaron en analyzeLexical del analizador específico
-//            // Los analizadores específicos ya manejan sus errores internamente
-//
-//            System.out.println("DEBUG - Errores después del análisis léxico: " + errores.size());
-//            for (AnalysisError error : errores) {
-//                System.out.println("  - " + error.getFullMessage());
-//            }
-//
-//            return tokens;
-//
-//        } catch (Exception e) {
-//            AnalysisError error = new AnalysisError(
-//                    "Error en el análisis léxico: " + e.getMessage(),
-//                    AnalysisError.ErrorType.LEXICAL,
-//                    1,
-//                    0
-//            );
-//            errores.add(error);
-//            e.printStackTrace(); // Para debugging
-//            return new ArrayList<>();
-//        }
-//    }
-//}
-
-
-
-
-// ===== CORRECCIÓN 2: LexicalAnalyzerService Actualizado =====
-
 package com.analyzer.service;
 
 import com.analyzer.model.*;
@@ -134,7 +5,6 @@ import com.analyzer.service.interfaces.ILanguageDetector;
 import com.analyzer.service.interfaces.ILexicalAnalyzer;
 
 import java.util.*;
-        import java.util.concurrent.CopyOnWriteArrayList;
 
 public class LexicalAnalyzerService implements ILexicalAnalyzer {
 
@@ -144,33 +14,61 @@ public class LexicalAnalyzerService implements ILexicalAnalyzer {
     public LexicalAnalyzerService(ILanguageDetector detector, Map<LanguageType, ILexicalAnalyzer> analizadores) {
         this.detector = detector;
         this.analizadores = analizadores;
+
+        // Debug de inicialización
+        System.out.println("LexicalAnalyzerService inicializado con " + analizadores.size() + " analizadores:");
+        for (Map.Entry<LanguageType, ILexicalAnalyzer> entry : analizadores.entrySet()) {
+            System.out.println("   " + entry.getKey() + " -> " + entry.getValue().getClass().getSimpleName());
+        }
     }
 
     @Override
     public List<Token> tokenize(String code) {
+        if (code == null || code.trim().isEmpty()) {
+            System.out.println("LexicalAnalyzerService.tokenize: Código vacío");
+            return new ArrayList<>();
+        }
+
         LanguageType language = detector.detectLanguage(code);
+        System.out.println("🔍 LexicalAnalyzerService.tokenize: Lenguaje detectado = " + language);
+
         ILexicalAnalyzer analyzer = analizadores.get(language);
 
         if (analyzer == null) {
+            System.out.println("No hay analizador para " + language + ", usando genérico");
             return analizarGenerico(code);
         }
 
+        System.out.println("Usando analizador: " + analyzer.getClass().getSimpleName());
         return analyzer.tokenize(code);
     }
 
     @Override
     public List<Token> analyze(String code, LanguageType language) {
+        if (code == null || code.trim().isEmpty()) {
+            System.out.println("LexicalAnalyzerService.analyze: Código vacío");
+            return new ArrayList<>();
+        }
+
+        System.out.println("LexicalAnalyzerService.analyze: Lenguaje = " + language);
+
         ILexicalAnalyzer analizador = analizadores.get(language);
         if (analizador == null) {
+            System.err.println("No hay analizador disponible para el lenguaje: " + language);
             throw new IllegalStateException("No hay analizador disponible para el lenguaje: " + language);
         }
+
+        System.out.println("Delegando a: " + analizador.getClass().getSimpleName());
         return analizador.analyze(code, language);
     }
 
     @Override
     public List<Token> analyzeLexical(String fuente, List<AnalysisError> errores) {
+        System.out.println("🔍 LexicalAnalyzerService.analyzeLexical iniciado");
+
         // VALIDAR PARÁMETROS
         if (fuente == null || fuente.trim().isEmpty()) {
+            System.out.println("Fuente vacía o null");
             return new ArrayList<>();
         }
 
@@ -178,10 +76,15 @@ public class LexicalAnalyzerService implements ILexicalAnalyzer {
         List<AnalysisError> localErrors = errores != null ? errores : new ArrayList<>();
 
         try {
+            // DETECTAR LENGUAJE
             LanguageType lenguaje = detector.detectLanguage(fuente);
+            System.out.println("Lenguaje detectado: " + lenguaje);
+
+            // OBTENER ANALIZADOR ESPECÍFICO
             ILexicalAnalyzer analizador = analizadores.get(lenguaje);
 
             if (analizador == null) {
+                System.err.println("No se encontró analizador para: " + lenguaje);
                 AnalysisError error = new AnalysisError(
                         "No se encontró analizador para el lenguaje detectado: " + lenguaje,
                         AnalysisError.ErrorType.LEXICAL,
@@ -191,32 +94,33 @@ public class LexicalAnalyzerService implements ILexicalAnalyzer {
                 return analizarGenerico(fuente);
             }
 
-            // CREAR LISTA TEMPORAL PARA ERRORES DEL ANALIZADOR
-            List<AnalysisError> tempErrors = new ArrayList<>();
-            List<Token> tokens = analizador.analyzeLexical(fuente, tempErrors);
+            System.out.println("Usando analizador específico: " + analizador.getClass().getSimpleName());
 
-            // AGREGAR ERRORES DE FORMA THREAD-SAFE
-            synchronized (localErrors) {
-                localErrors.addAll(tempErrors);
-            }
+            // LLAMAR AL ANALIZADOR ESPECÍFICO
+            List<Token> tokens = analizador.analyzeLexical(fuente, localErrors);
+
+            System.out.println("Análisis completado:");
+            System.out.println("Tokens: " + (tokens != null ? tokens.size() : 0));
+            System.out.println("Errores: " + localErrors.size());
 
             return tokens != null ? new ArrayList<>(tokens) : new ArrayList<>();
 
         } catch (Exception e) {
+            System.err.println(" ERROR CRÍTICO en LexicalAnalyzerService: " + e.getMessage());
+            e.printStackTrace();
+
             AnalysisError error = new AnalysisError(
                     "Error en el análisis léxico: " + e.getMessage(),
                     AnalysisError.ErrorType.LEXICAL,
                     1, 0
             );
-            synchronized (localErrors) {
-                localErrors.add(error);
-            }
-            e.printStackTrace();
+            localErrors.add(error);
             return new ArrayList<>();
         }
     }
 
     private List<Token> analizarGenerico(String fuente) {
+        System.out.println("🔧 Usando análisis genérico...");
         List<Token> tokens = new ArrayList<>();
         String[] lineas = fuente.split("\n");
 
@@ -232,6 +136,7 @@ public class LexicalAnalyzerService implements ILexicalAnalyzer {
             }
         }
 
+        System.out.println("✅ Análisis genérico completado: " + tokens.size() + " tokens");
         return tokens;
     }
 }
