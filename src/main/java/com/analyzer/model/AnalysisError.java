@@ -1,68 +1,45 @@
-// --- AnalysisError.java ---
 package com.analyzer.model;
 
-import java.util.Objects;
-
 public class AnalysisError {
+    public String getFullMessage() {
+        return String.format("[%s] Línea %d, Columna %d: %s",
+            errorType.getDisplayName(), line, column, message);
+    }
 
     public enum ErrorType {
-        LEXICAL("Léxico"), SYNTACTIC("Sintáctico"),
-        SEMANTIC("Semántico"), WARNING("Advertencia");
+        LEXICAL("Léxico"),
+        SYNTACTIC("Sintáctico"),
+        SEMANTIC("Semántico");
 
         private final String displayName;
         ErrorType(String displayName) { this.displayName = displayName; }
         public String getDisplayName() { return displayName; }
-        @Override
-        public String toString() { return displayName; }
     }
 
-    private String message;
-    private int line;
-    private int column;
-    private ErrorType errorType;
-    private String suggestion;
+    private final String message;
+    private final ErrorType errorType;
+    private final int line;
+    private final int column;
 
     public AnalysisError(String message, ErrorType errorType, int line, int column) {
-        this.message = message != null ? message : "Error desconocido";
-        this.errorType = errorType != null ? errorType : ErrorType.LEXICAL;
-        this.line = Math.max(0, line);
-        this.column = Math.max(0, column);
+        this.message = message;
+        this.errorType = errorType;
+        this.line = line;
+        this.column = column;
     }
 
     public AnalysisError(String message, ErrorType errorType) {
         this(message, errorType, 0, 0);
     }
 
-    // Getters y Setters
     public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
-    public int getLine() { return line; }
-    public void setLine(int line) { this.line = Math.max(0, line); }
-    public int getColumn() { return column; }
-    public void setColumn(int column) { this.column = Math.max(0, column); }
     public ErrorType getErrorType() { return errorType; }
-    public void setErrorType(ErrorType errorType) { this.errorType = errorType; }
-    public String getSuggestion() { return suggestion; }
-    public void setSuggestion(String suggestion) { this.suggestion = suggestion; }
-
-    public String getPosition() { return line + ":" + column; }
-
-    public String getFullMessage() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[").append(errorType.getDisplayName()).append("] ");
-        if (line > 0 || column > 0) {
-            sb.append("(").append(getPosition()).append(") ");
-        }
-        sb.append(message);
-        if (suggestion != null && !suggestion.trim().isEmpty()) {
-            sb.append(" - Sugerencia: ").append(suggestion);
-        }
-        return sb.toString();
-    }
+    public int getLine() { return line; }
+    public int getColumn() { return column; }
 
     @Override
     public String toString() {
-        return "AnalysisError{message='" + message + "', line=" + line +
-                ", column=" + column + ", errorType=" + errorType + "}";
+        return String.format("[%s] Línea %d, Columna %d: %s", 
+            errorType.getDisplayName(), line, column, message);
     }
 }

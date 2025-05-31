@@ -23,7 +23,7 @@ public class ExecutionSimulator {
                 outputs.addAll(simulatePlsqlExecution(tokens, symbols));
                 break;
             default:
-                outputs.add("Simulación no disponible para el lenguaje: " + language.getDisplayName());
+               // outputs.add("Simulación no disponible para el lenguaje: " + language.getDisplayName());
                 break;
         }
 
