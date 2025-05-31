@@ -3,7 +3,7 @@ package com.analyzer.model;
 public enum LanguageType {
     HTML("HTML", "Lenguaje de marcado para páginas web"),
     PYTHON("Python", "Lenguaje de programación interpretado"),
-    PLSQL("PL/SQL", "Lenguaje de programación de Oracle Database"),
+    PLSQL("SQL", "Lenguaje de programación de Oracle Database"),
     UNKNOWN("Desconocido", "Lenguaje no identificado");
 
     private final String displayName;

@@ -98,39 +98,83 @@ public class ResultsTabPane extends TabPane {
 
         tokensTable.getColumns().addAll(tokenValueCol, tokenTypeCol, tokenPositionCol);
 
-        // Tabla de Errores
-        TableColumn<AnalysisError, String> errorTypeCol = new TableColumn<>("Tipo");
-        errorTypeCol.setCellValueFactory(new PropertyValueFactory<>("errorType"));
-        errorTypeCol.setPrefWidth(100);
-
-        TableColumn<AnalysisError, String> errorMessageCol = new TableColumn<>("Mensaje");
-        errorMessageCol.setCellValueFactory(new PropertyValueFactory<>("message"));
-        errorMessageCol.setPrefWidth(300);
-
-        TableColumn<AnalysisError, String> errorPositionCol = new TableColumn<>("Posición");
-        errorPositionCol.setCellValueFactory(new PropertyValueFactory<>("position"));
-        errorPositionCol.setPrefWidth(80);
-
-        errorsTable.getColumns().addAll(errorTypeCol, errorMessageCol, errorPositionCol);
-
-        // Tabla de Símbolos
+        // Mejorar la tabla de símbolos
         TableColumn<Symbol, String> symbolNameCol = new TableColumn<>("Nombre");
         symbolNameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
         symbolNameCol.setPrefWidth(120);
 
-        TableColumn<Symbol, String> symbolTypeCol = new TableColumn<>("Tipo");
+        TableColumn<Symbol, Symbol.SymbolType> symbolTypeCol = new TableColumn<>("Tipo");
         symbolTypeCol.setCellValueFactory(new PropertyValueFactory<>("symbolType"));
         symbolTypeCol.setPrefWidth(100);
-
-        TableColumn<Symbol, String> symbolDataTypeCol = new TableColumn<>("Tipo Dato");
-        symbolDataTypeCol.setCellValueFactory(new PropertyValueFactory<>("dataType"));
-        symbolDataTypeCol.setPrefWidth(100);
+        symbolTypeCol.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(Symbol.SymbolType item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item.getDisplayName());
+                }
+            }
+        });
 
         TableColumn<Symbol, String> symbolScopeCol = new TableColumn<>("Ámbito");
         symbolScopeCol.setCellValueFactory(new PropertyValueFactory<>("scope"));
         symbolScopeCol.setPrefWidth(100);
 
-        symbolsTable.getColumns().addAll(symbolNameCol, symbolTypeCol, symbolDataTypeCol, symbolScopeCol);
+        TableColumn<Symbol, Integer> symbolLineCol = new TableColumn<>("Línea");
+        symbolLineCol.setCellValueFactory(new PropertyValueFactory<>("declarationLine"));
+        symbolLineCol.setPrefWidth(60);
+
+        TableColumn<Symbol, Integer> symbolColumnCol = new TableColumn<>("Columna");
+        symbolColumnCol.setCellValueFactory(new PropertyValueFactory<>("declarationColumn"));
+        symbolColumnCol.setPrefWidth(70);
+
+        symbolsTable.getColumns().setAll(symbolNameCol, symbolTypeCol, symbolScopeCol, 
+                                       symbolLineCol, symbolColumnCol);
+
+        // Mejorar la tabla de errores
+        TableColumn<AnalysisError, AnalysisError.ErrorType> errorTypeCol = 
+            new TableColumn<>("Tipo");
+        errorTypeCol.setCellValueFactory(new PropertyValueFactory<>("errorType"));
+        errorTypeCol.setPrefWidth(100);
+        errorTypeCol.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(AnalysisError.ErrorType item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(item.getDisplayName());
+                    switch (item) {
+                        case LEXICAL:
+                            setStyle("-fx-text-fill: red;");
+                            break;
+                        case SYNTACTIC:
+                            setStyle("-fx-text-fill: orange; -fx-font-weight: bold;");
+                            break;
+                        case SEMANTIC:
+                            setStyle("-fx-text-fill: blue;");
+                            break;
+                    }
+                }
+            }
+        });
+
+        TableColumn<AnalysisError, String> errorMessageCol = new TableColumn<>("Mensaje");
+        errorMessageCol.setCellValueFactory(new PropertyValueFactory<>("message"));
+        errorMessageCol.setPrefWidth(300);
+
+        TableColumn<AnalysisError, Integer> errorLineCol = new TableColumn<>("Línea");
+        errorLineCol.setCellValueFactory(new PropertyValueFactory<>("line"));
+        errorLineCol.setPrefWidth(60);
+
+        TableColumn<AnalysisError, Integer> errorColumnCol = new TableColumn<>("Columna");
+        errorColumnCol.setCellValueFactory(new PropertyValueFactory<>("column"));
+        errorColumnCol.setPrefWidth(70);
+
+        errorsTable.getColumns().setAll(errorTypeCol, errorMessageCol, errorLineCol, errorColumnCol);
     }
 
     private void setupStyles() {
@@ -138,55 +182,42 @@ public class ResultsTabPane extends TabPane {
         tokensTable.getStyleClass().add("data-table");
         errorsTable.getStyleClass().add("data-table");
         symbolsTable.getStyleClass().add("data-table");
+        outputTextArea.getStyleClass().add("output-text-area");
+
+        // Estilos adicionales
+        languageLabel.getStyleClass().add("language-label");
+        outputTextArea.setWrapText(true);
     }
 
     public void updateResults(AnalysisController.AnalysisResult result) {
-        // Actualizar lenguaje
-        if (result.getLanguage() != null) {
-            languageLabel.setText(result.getLanguage().getDisplayName() +
-                    " - " + result.getLanguage().getDescription());
+        languageLabel.setText(result.getLanguage() != null ? result.getLanguage().getDisplayName() : "No detectado");
+
+        ObservableList<Token> tokens = FXCollections.observableArrayList(result.getTokens());
+        tokensTable.setItems(tokens);
+
+        ObservableList<AnalysisError> errors = FXCollections.observableArrayList();
+        errors.addAll(result.getLexicalErrors());
+        errors.addAll(result.getSyntacticErrors());
+        errors.addAll(result.getSemanticErrors());
+        errorsTable.setItems(errors);
+
+        ObservableList<Symbol> symbols = FXCollections.observableArrayList(result.getSymbolTable().values());
+        symbolsTable.setItems(symbols);
+
+        outputTextArea.clear();
+        if (result.isSuccess()) {
+            outputTextArea.setText(String.join("\n", result.getExecutionOutput()));
+        } else {
+            outputTextArea.setText("Análisis fallido. Verifique los errores.");
         }
-
-        // Actualizar tokens
-        if (result.getTokens() != null) {
-            ObservableList<Token> tokenData = FXCollections.observableArrayList(result.getTokens());
-            tokensTable.setItems(tokenData);
-        }
-
-        // Actualizar errores
-        List<AnalysisError> allErrors = result.getAllErrors();
-        ObservableList<AnalysisError> errorData = FXCollections.observableArrayList(allErrors);
-        errorsTable.setItems(errorData);
-
-        // Actualizar símbolos
-        if (result.getSymbolTable() != null) {
-            ObservableList<Symbol> symbolData = FXCollections.observableArrayList(
-                    result.getSymbolTable().values()
-            );
-            symbolsTable.setItems(symbolData);
-        }
-
-        // Actualizar salida
-        if (result.getExecutionOutput() != null) {
-            String output = String.join("\n", result.getExecutionOutput());
-            outputTextArea.setText(output);
-        }
-
-        // Actualizar badges de conteo en las pestañas
-        tokensTab.setText("Tokens (" + (result.getTokens() != null ? result.getTokens().size() : 0) + ")");
-        errorsTab.setText("Errores (" + allErrors.size() + ")");
-        symbolsTab.setText("Símbolos (" + (result.getSymbolTable() != null ? result.getSymbolTable().size() : 0) + ")");
     }
 
     public void clearResults() {
-        languageLabel.setText("No detectado");
-        tokensTable.getItems().clear();
-        errorsTable.getItems().clear();
-        symbolsTable.getItems().clear();
-        outputTextArea.clear();
 
-        tokensTab.setText("Tokens");
-        errorsTab.setText("Errores");
-        symbolsTab.setText("Símbolos");
+        languageLabel.setText("No detectado");
+        tokensTable.setItems(FXCollections.observableArrayList());
+        errorsTable.setItems(FXCollections.observableArrayList());
+        symbolsTable.setItems(FXCollections.observableArrayList());
+        outputTextArea.clear();
     }
 }

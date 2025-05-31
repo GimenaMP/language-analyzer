@@ -14,8 +14,8 @@ public class AnalyzerIntegrationTest {
         System.out.println("Iniciando pruebas de integración...\n");
 
         inicializar();
-        //probarAnalisisPython();
-        probarAnalisisHtml();
+      //  probarAnalisisPython();
+       probarAnalisisHtml();
 //        probarAnalisisPlsql();
 
         System.out.println("\nPruebas de integración completadas.");
@@ -27,23 +27,28 @@ public class AnalyzerIntegrationTest {
 
 //    private void probarAnalisisPython() {
 //        String codigoPython =
-//                "       def suma(a, b):\n" +
-//                        "result = a ++ b\n" +    // Operación correcta para suma
-//                        " return result\n" +
+//                "def suma(a, b):\n" +
+//                        "result = a +++ b\n" +         // Error: indentación y operador inválido
+//                        "    return result\n" +       // Error: variable no declarada e indentación inconsistente
 //                        "\n" +
-//                        "# Variables sin declarar\n" +
-//                        "345x = c + d\n" +           // Error: c y d no están declarados
+//
+//                        "/# Variables sin declarar y identificador inválido\n" +
+//                        "345x = c ++ d\n" +           // Error: identificador inválido y variables no declaradas
 //                        "\n" +
-//                        "# Reasignación de función incorporada\n" +
-//                        "print = 'hola'\n" +      // Error: reasignando función incorporada
+//                        "# Reasignación de built-in\n" +
+//                        "print != 'hola'\n" +         // Error: redefinición de built-in
 //                        "\n" +
-//                        "# División por cero potencial\n" +
-//                        "def divide(a, b):\n" +
-//                        "    return a / 0\n" +    // Error: división por cero
+//                        "# División por cero\n" +
+//                        "de divide(a, b):\n" +
+//                        "    return a / 0\n" +       // Warning: división por cero potencial
 //                        "\n" +
-//                        "# Bucle con rango incorrecto\n" +
-//                        "for i in range(10, 1):\n" + // Error: rango inválido
-//                        "    print(i)\n";
+//                        "# Rango inválido\n" +
+//                        "for i in range(10, 1):\n" + // Error: rango inválido (10 > 1)
+//                        "    print(i)\n" +           // Error: 'print' fue redefinido como string
+//                        "\n" +
+//                        "# Mezcla de indentación\n" +
+//                        "def otra():\n" +
+//                        "\treturn 1\n";
 //
 //        AnalysisController.AnalysisResult resultado = controller.performCompleteAnalysis(codigoPython);
 //
@@ -103,9 +108,13 @@ public class AnalyzerIntegrationTest {
                 );
 
         // Verificar tabla de símbolos
-        if (resultado.getSymbolTable() == null) {
+        if (resultado.getSymbolTable() == null || resultado.getSymbolTable().isEmpty()) {
             System.out.println("ERROR: No se generó tabla de símbolos");
-            return;
+        } else {
+            System.out.println("\nSímbolos generados:");
+            resultado.getSymbolTable().values().forEach(symbol ->
+                System.out.println("- " + symbol.getName() + " (" + symbol.getSymbolType() + ", Línea " + symbol.getDeclarationLine() + ")")
+            );
         }
 
         // Mostrar salida de simulación

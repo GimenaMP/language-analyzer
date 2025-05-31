@@ -6,9 +6,15 @@ import com.analyzer.service.*;
 import com.analyzer.service.LexicalAnalizer.HTMLLexicalAnalyzer;
 import com.analyzer.service.LexicalAnalizer.PythonLexicalAnalyzer;
 import com.analyzer.service.LexicalAnalizer.SQLLexicalAnalyzer;
+import com.analyzer.service.SemanticAnalyzer.*;
+
+import com.analyzer.service.SyntacticAnalyzer.SQLSyntacticAnalyzer;
 import com.analyzer.service.interfaces.*;
+import com.analyzer.service.SyntacticAnalyzer.HTMLSyntacticAnalyzer;
+
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +26,7 @@ public class AnalysisController {
 
     private final ILanguageDetector languageDetector;
     private final ILexicalAnalyzer lexicalAnalyzer;
-    private final ISyntacticAnalyzer syntacticAnalyzer;
+    private final ISyntacticAnalyzer syntacticAnalyzer; // Cambiar a una única instancia
     private final ISemanticAnalyzer semanticAnalyzer;
     private final ExecutionSimulator executionSimulator;
 
@@ -34,7 +40,10 @@ public class AnalysisController {
                         LanguageType.PLSQL, new SQLLexicalAnalyzer()
                 )
         );
+
+        // Usar SyntacticAnalyzerService en lugar de un Map de analizadores
         this.syntacticAnalyzer = new SyntacticAnalyzerService();
+
         this.semanticAnalyzer = new SemanticAnalyzerService();
         this.executionSimulator = new ExecutionSimulator();
     }
@@ -50,25 +59,32 @@ public class AnalysisController {
             LanguageType language = languageDetector.detectLanguage(code);
             result.setLanguage(language);
 
-            // 2. Análisis léxico
+            // 2. Análisis léxico con manejo explícito de errores
             List<AnalysisError> lexicalErrors = new ArrayList<>();
             List<Token> tokens = lexicalAnalyzer.analyzeLexical(code, lexicalErrors);
             result.setTokens(tokens);
-            result.setLexicalErrors(lexicalErrors);
+            result.setLexicalErrors(new ArrayList<>(lexicalErrors));
 
-            // 3. Análisis sintáctico
+            // 3. Análisis sintáctico y obtención de tabla de símbolos
             List<AnalysisError> syntacticErrors = syntacticAnalyzer.analyze(tokens, language);
             result.setSyntacticErrors(syntacticErrors);
 
+            // Obtener tabla de símbolos si está disponible
+            if (syntacticAnalyzer instanceof SyntacticAnalyzerService) {
+                List<Symbol> symbols = ((SyntacticAnalyzerService) syntacticAnalyzer).getSymbolTable();
+                Map<String, Symbol> symbolTable = new HashMap<>();
+                symbols.forEach(symbol -> symbolTable.put(symbol.getName(), symbol));
+                result.setSymbolTable(symbolTable);
+            }
+
             // 4. Análisis semántico
-            List<AnalysisError> semanticErrors = semanticAnalyzer.analyze(tokens, language, null);
+            Map<String, Symbol> symbolTable = result.getSymbolTable() != null ?
+                                            result.getSymbolTable() :
+                                            new HashMap<>();
+            List<AnalysisError> semanticErrors = semanticAnalyzer.analyze(tokens, language, symbolTable);
             result.setSemanticErrors(semanticErrors);
 
-            // 5. Obtener tabla de símbolos
-            Map<String, Symbol> symbolTable = semanticAnalyzer.getSymbolTable();
-            result.setSymbolTable(symbolTable);
-
-            // 6. Simulación de ejecución
+            // 5. Simulación de ejecución
             List<String> executionOutput = executionSimulator.simulateExecution(
                     tokens, language, List.copyOf(symbolTable.values())
             );
@@ -78,10 +94,14 @@ public class AnalysisController {
 
         } catch (Exception e) {
             result.setSuccess(false);
-            result.addError(new AnalysisError(
-                    "Error interno: " + e.getMessage(),
-                    AnalysisError.ErrorType.LEXICAL
-            ));
+            AnalysisError error = new AnalysisError(
+                "Error en el análisis: " + e.getMessage(),
+                AnalysisError.ErrorType.LEXICAL,
+                0,
+                0
+            );
+            result.addError(error);
+            e.printStackTrace(); // Para debugging
         }
 
         return result;

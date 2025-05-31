@@ -5,6 +5,7 @@ module com.analyzer {
         requires javafx.fxml;
         requires java.desktop;
     requires org.junit.jupiter.api;
+    requires junit;
 
     exports com.analyzer;
         exports com.analyzer.model;
