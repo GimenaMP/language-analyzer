@@ -10,4 +10,8 @@ public interface ILexicalAnalyzer {
     List<Token> analyze(String code, LanguageType language);
 
     List<Token> analyzeLexical(String fuente, List<AnalysisError> errores);
+
+    List<Token> tokenize(String code);
+
+
 }

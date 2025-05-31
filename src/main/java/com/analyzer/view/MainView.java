@@ -202,6 +202,8 @@ public class MainView {
         alert.showAndWait();
     }
 
+
+
     private void showInfo(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Información");

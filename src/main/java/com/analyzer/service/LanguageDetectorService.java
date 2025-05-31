@@ -1,29 +1,28 @@
-
-// --- LanguageDetectorService.java ---
 package com.analyzer.service;
 
-import com.analyzer.service.interfaces.ILanguageDetector;
 import com.analyzer.model.LanguageType;
+import com.analyzer.service.interfaces.ILanguageDetector;
 import java.util.regex.Pattern;
 
 public class LanguageDetectorService implements ILanguageDetector {
-
-    // Patrones para HTML
-    private static final Pattern HTML_PATTERN = Pattern.compile(
-            ".*(<html|<head|<body|<div|<p>|<span|<!DOCTYPE|<meta|<link|<script>).*",
-            Pattern.CASE_INSENSITIVE | Pattern.DOTALL
-    );
-
-    // Patrones para Python
+    
     private static final Pattern PYTHON_PATTERN = Pattern.compile(
-            ".*(def\\s+\\w+|import\\s+\\w+|from\\s+\\w+|if\\s+\\w+:|for\\s+\\w+\\s+in|class\\s+\\w+:|print\\s*\\().*",
-            Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+        "\\b(def|class|import|from|if|elif|else|while|for|in|return|print)\\b|" +
+        "#.*$|" +
+        "\\b(True|False|None)\\b",
+        Pattern.MULTILINE
     );
 
-    // Patrones para PL/SQL
-    private static final Pattern PLSQL_PATTERN = Pattern.compile(
-            ".*(CREATE\\s+TABLE|SELECT\\s+\\*|INSERT\\s+INTO|UPDATE\\s+\\w+|DELETE\\s+FROM|BEGIN|END;|DECLARE).*",
-            Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+    private static final Pattern SQL_PATTERN = Pattern.compile(
+        "\\b(SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|JOIN|GROUP BY|ORDER BY|HAVING|CREATE|TABLE|ALTER|DROP|INDEX|VIEW)\\b|" +
+        "\\b(VARCHAR|INTEGER|NUMBER|DATE|CHAR|BOOLEAN)\\b|" +
+        "--.*$|/\\*(?s).*?\\*/",
+        Pattern.CASE_INSENSITIVE
+    );
+
+    private static final Pattern HTML_PATTERN = Pattern.compile(
+        "<[^>]+>|<!DOCTYPE|<html|<head|<body|<div|<p|<script|<style",
+        Pattern.CASE_INSENSITIVE
     );
 
     @Override
@@ -32,24 +31,30 @@ public class LanguageDetectorService implements ILanguageDetector {
             return LanguageType.UNKNOWN;
         }
 
-        // Limpiar código para análisis
-        String cleanCode = code.trim();
+        // Calcular puntuación para cada lenguaje
+        int pythonScore = countMatches(PYTHON_PATTERN, code);
+        int sqlScore = countMatches(SQL_PATTERN, code);
+        int htmlScore = countMatches(HTML_PATTERN, code);
 
-        // Verificar HTML primero (más específico)
-        if (HTML_PATTERN.matcher(cleanCode).matches()) {
+        // Determinar el lenguaje con mayor puntuación
+        if (pythonScore > sqlScore && pythonScore > htmlScore) {
+            return LanguageType.PYTHON;
+        } else if (sqlScore > pythonScore && sqlScore > htmlScore) {
+            return LanguageType.PLSQL; // Cambiado de SQL a PLSQL
+        } else if (htmlScore > pythonScore && htmlScore > sqlScore) {
             return LanguageType.HTML;
         }
 
-        // Verificar PL/SQL
-        if (PLSQL_PATTERN.matcher(cleanCode).matches()) {
-            return LanguageType.PLSQL;
-        }
-
-        // Verificar Python
-        if (PYTHON_PATTERN.matcher(cleanCode).matches()) {
-            return LanguageType.PYTHON;
-        }
-
+        // Si no hay un claro ganador o no hay coincidencias
         return LanguageType.UNKNOWN;
+    }
+
+    private int countMatches(Pattern pattern, String text) {
+        java.util.regex.Matcher matcher = pattern.matcher(text);
+        int count = 0;
+        while (matcher.find()) {
+            count++;
+        }
+        return count;
     }
 }
